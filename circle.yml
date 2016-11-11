@@ -1,0 +1,20 @@
+machine:
+    services:
+        - docker
+
+dependencies:
+    pre:
+        # Login to docker
+        - docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+
+test:
+    override:
+        # Build images
+        - make build
+
+deployment:
+  hub:
+    branch: master
+    commands:
+        # Push images
+        - make push
