@@ -14,14 +14,14 @@ build-%:
 	@echo "\
 pythonversion: $(PYTHON_VERSION)\n\
 " > data$(PYTHON_VERSION).yml
-	docker run \
+	@docker run \
 		-v $(ROOTDIR)/Dockerfile.j2:/data/Dockerfile.j2 \
 		-v $(ROOTDIR)/data$(PYTHON_VERSION).yml:/data/data.yml \
 		sgillis/jinja2cli Dockerfile.j2 data.yml > Dockerfile
-	docker build -t $(DOCKER_REPO):$(PYTHON_VERSION) .
+	docker build -t $(DOCKER_REPO):$(PYTHON_VERSION)-alpine .
 	@rm data$(PYTHON_VERSION).yml
 	@rm Dockerfile
 
 push-%: PYTHON_VERSION=$(parse_python_version)
 push-%:
-	docker push $(DOCKER_REPO):$(PYTHON_VERSION)
+	docker push $(DOCKER_REPO):$(PYTHON_VERSION)-alpine
