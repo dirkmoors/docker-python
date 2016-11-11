@@ -1,5 +1,5 @@
 ROOTDIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-DOCKER_REPO?=dirkmoors/python
+DOCKER_REPO?=ditchitall/python
 
 parse_python_version = $(shell echo $@ | sed "s/[^-]*-python-\(.*\)/\1/")
 
