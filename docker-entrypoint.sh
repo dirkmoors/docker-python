@@ -7,7 +7,7 @@
 USER_ID=${LOCAL_USER_ID:-9001}
 USERNAME=${LOCAL_USERNAME:-user}
 
-adduser -s /bin/bash -u $USER_ID -D -h ${USERNAME} ${USERNAME}
+adduser -s /bin/bash -u $USER_ID -D -h /home/${USERNAME} ${USERNAME}
 export HOME=/home/${USERNAME}
 
 exec su-exec ${USERNAME} "$@"
