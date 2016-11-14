@@ -14,8 +14,9 @@ case ${USER_ID} in
         ;;
    *)
         # Run as non-root
-        adduser -s /bin/bash -u $USER_ID -D -h /home/${USERNAME} ${USERNAME}
+        adduser -s /bin/bash -u ${USER_ID} -D -h /home/${USERNAME} ${USERNAME}
         export HOME=/home/${USERNAME}
+        chown -R ${USER_ID}:${USER_ID} ${SRC_DIR}
         exec su-exec ${USERNAME} "$@"
         ;;
 esac
