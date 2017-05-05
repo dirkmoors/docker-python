@@ -2,12 +2,14 @@ FROM python:{{ pythonversion }}-alpine
 
 ENV WAITFORIT_VERSION="v1.4.0" \
     LC_ALL=C \
-    LIBRESSL_VERSION=2.5.3 \
+    LIBRESSL_VERSION=2.5.4 \
     GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
     LIBCRYPTO_NAME="libcrypto.so.41.0.1"
 
 # Install LibreSSL
-RUN echo "@commuedge https://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
+RUN set -x \
+    && echo "@commuedge https://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
+    && echo "@commuedge https://dl-3.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
     && NB_CORES=${BUILD_CORES-$(getconf _NPROCESSORS_CONF)} \
     && BUILD_DEPS=" \
         build-base \
