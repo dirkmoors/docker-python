@@ -4,7 +4,8 @@ ENV WAITFORIT_VERSION="v1.4.0" \
     LC_ALL=C \
     LIBRESSL_VERSION=2.5.4 \
     GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
-    LIBCRYPTO_NAME="libcrypto.so.41.0.1"
+    LIBCRYPTO_NAME="libcrypto.so.41.0.1" \
+    PHANTOMJS_ARCHIVE="phantomjs.tar.gz"
 
 # Install LibreSSL
 RUN set -x \
@@ -65,6 +66,18 @@ RUN set -v \
         && ./install_webp.sh \
         && cd - \
     && apk del --purge ${BUILD_PKGS} \
+    && rm -rf /tmp/*
+
+# Install phantomjs
+COPY contrib/phantomjs /tmp/phantomjs
+RUN tar -xf /tmp/phantomjs/$PHANTOMJS_ARCHIVE -C /tmp/ \
+    && cp -R /tmp/etc/fonts /etc/ \
+    && cp -R /tmp/lib/* /lib/ \
+    && cp -R /tmp/lib64 / \
+    && cp -R /tmp/usr/lib/* /usr/lib/ \
+    && cp -R /tmp/usr/lib/x86_64-linux-gnu /usr/ \
+    && cp -R /tmp/usr/share/* /usr/share/ \
+    && cp /tmp/usr/local/bin/phantomjs /usr/bin/ \
     && rm -rf /tmp/*
 
 # Install waitforit
