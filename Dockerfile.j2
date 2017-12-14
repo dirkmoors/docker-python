@@ -4,8 +4,7 @@ ENV WAITFORIT_VERSION="v1.4.0" \
     LC_ALL=C \
     LIBRESSL_VERSION=2.6.3 \
     GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
-    LIBCRYPTO_NAME="libcrypto.so.41.0.1" \
-    PANDAS_VERSION=0.21.1
+    LIBCRYPTO_NAME="libcrypto.so.41.0.1"
 
 # Install LibreSSL
 RUN set -x \
@@ -67,16 +66,6 @@ RUN set -v \
         && cd - \
     && apk del --purge ${BUILD_PKGS} \
     && rm -rf /tmp/*
-
-# Install pandas & numpy
-RUN set -x \
-    && RUNTIME_PKGS='zlib libxml2' \
-    && BUILD_PKGS='git gcc g++ libxml2-dev' \
-    && apk add --update ${BUILD_PKGS} \
-    && pip install pandas==${PANDAS_VERSION} \
-    && apk del ${BUILD_PKGS} \
-    && apk add --update ${RUNTIME_PKGS} \
-    && rm -rf /var/cache/apk/*
 
 # Install waitforit
 RUN set -x \
