@@ -5,9 +5,9 @@ parse_python_version = $(shell echo $@ | sed "s/[^-]*-python-\(.*\)/\1/")
 
 all: build push
 
-push: push-python-2.7.13 push-python-3.5.3 push-python-3.6.1
+push: push-python-2.7.14 push-python-3.5.4 push-python-3.6.3
 
-build: build-python-2.7.13 build-python-3.5.3 build-python-3.6.1
+build: build-python-2.7.14 build-python-3.5.4 build-python-3.6.3
 
 build-%: PYTHON_VERSION=$(parse_python_version)
 build-%:
