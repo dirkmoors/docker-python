@@ -1,10 +1,21 @@
-FROM python:{{ pythonversion }}-alpine
+FROM alpine:3.6
+
+ENV PATH=/usr/local/bin:$PATH \
+    LANG=C.UTF-8 \
+    PYTHON_GPG_KEYS="{{ gpgkeys }}" \
+    PYTHON_VERSION={{ pythonversion }}
 
 ENV WAITFORIT_VERSION="v1.4.0" \
     LC_ALL=C \
     LIBRESSL_VERSION=2.6.3 \
-    GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
+    LIBRESSL_GPG_KEY="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
     LIBCRYPTO_NAME="libcrypto.so.41.0.1"
+
+# Install ca-certificates
+RUN set -v \
+    && apk update \
+    && apk add make ca-certificates curl linux-headers \
+    && update-ca-certificates
 
 # Install LibreSSL
 RUN set -x \
@@ -44,7 +55,7 @@ RUN set -x \
     && FINGERPRINT="$(LANG=C gpg --verify ${LIBRESSL_TARBALL}.asc ${LIBRESSL_TARBALL} 2>&1 \
      | sed -n "s#Primary key fingerprint: \(.*\)#\1#p")" \
     && if [ -z "${FINGERPRINT}" ]; then echo "Warning! Invalid GPG signature!" && exit 1; fi \
-    && if [ "${FINGERPRINT}" != "${GPG_LIBRESSL}" ]; then echo "Warning! Wrong GPG fingerprint!" && exit 1; fi \
+    && if [ "${FINGERPRINT}" != "${LIBRESSL_GPG_KEY}" ]; then echo "Warning! Wrong GPG fingerprint!" && exit 1; fi \
     && echo "All seems good, now unpacking ${LIBRESSL_TARBALL}..." \
     && tar xzf ${LIBRESSL_TARBALL} \
     && cd /tmp/libressl-${LIBRESSL_VERSION} \
@@ -54,28 +65,109 @@ RUN set -x \
     && apk del --purge ${BUILD_DEPS} \
     && rm -rf /tmp/*
 
-# Install pillow dependencies
-COPY contrib/pillow /tmp/pillow
-RUN set -v \
-    && BUILD_PKGS='git gcc g++ bash curl' \
-    && PILLOW_DEPS='jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
-    && apk add --no-cache ${PILLOW_DEPS} ${BUILD_PKGS} \
-    && cd /tmp/pillow \
-        && ./install_imagequant.sh \
-        && ./install_webp.sh \
-        && cd - \
-    && apk del --purge ${BUILD_PKGS} \
-    && rm -rf /tmp/*
+RUN set -ex \
+	&& apk add --no-cache --virtual .fetch-deps \
+		gnupg \
+		tar \
+		xz \
+	\
+	&& wget -O python.tar.xz "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz" \
+	&& wget -O python.tar.xz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION%%[a-z]*}/Python-$PYTHON_VERSION.tar.xz.asc" \
+	&& export GNUPGHOME="$(mktemp -d)" \
+	&& gpg --keyserver ha.pool.sks-keyservers.net --recv-keys ${PYTHON_GPG_KEYS} \
+	&& gpg --batch --verify python.tar.xz.asc python.tar.xz \
+	&& rm -rf "$GNUPGHOME" python.tar.xz.asc \
+	&& mkdir -p /usr/src/python \
+	&& tar -xJC /usr/src/python --strip-components=1 -f python.tar.xz \
+	&& rm python.tar.xz \
+	\
+	&& apk add --no-cache --virtual .build-deps  \
+		bzip2-dev \
+		coreutils \
+		dpkg-dev dpkg \
+		gcc \
+		gdbm-dev \
+		libc-dev \
+		linux-headers \
+		make \
+		ncurses-dev \
+		pax-utils \
+		readline-dev \
+		sqlite-dev \
+		tcl-dev \
+		tk \
+		tk-dev \
+		zlib-dev \
+# add build deps before removing fetch deps in case there's overlap
+	&& apk del .fetch-deps \
+	\
+	&& cd /usr/src/python \
+	&& gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
+	&& ./configure \
+		--build="$gnuArch" \
+		--enable-shared \
+		--enable-unicode=ucs4 \
+	&& make -j "$(nproc)" \
+	&& make install \
+	\
+	&& runDeps="$( \
+		scanelf --needed --nobanner --format '%n#p' --recursive /usr/local \
+			| tr ',' '\n' \
+			| sort -u \
+			| awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+	)" \
+	&& apk add --virtual .python-rundeps $runDeps \
+	&& apk del .build-deps \
+	\
+	&& find /usr/local -depth \
+		\( \
+			\( -type d -a \( -name test -o -name tests \) \) \
+			-o \
+			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
+		\) -exec rm -rf '{}' + \
+	&& rm -rf /usr/src/python
 
-# Install waitforit
-RUN set -x \
-    && BASE_PKGS='su-exec bash curl' \
-    && apk add --update --no-cache make ${BASE_PKGS} \
-    && curl -o /usr/local/bin/waitforit -sSL https://github.com/maxcnunes/waitforit/releases/download/$WAITFORIT_VERSION/waitforit-linux_amd64 \
-    && chmod +x /usr/local/bin/waitforit \
-    && apk del --purge curl \
-    && rm -rf /var/cache/apk/*
+# Symlink python
+RUN set -e \
+    && cd /usr/local/bin \
+    && if [ ! -f ./python ]; then \
+        if [ -f ./python2 ]; then \
+            ln -s python2 python; \
+        elif [ -f ./python3 ]; then \
+            ln -s python3 python; \
+        fi \
+    fi
 
-COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+# if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
+ENV PYTHON_PIP_VERSION 9.0.1
 
-ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+RUN set -ex; \
+	\
+	wget -O get-pip.py 'https://bootstrap.pypa.io/get-pip.py'; \
+	\
+	python get-pip.py \
+		--disable-pip-version-check \
+		--no-cache-dir \
+		"pip==$PYTHON_PIP_VERSION" \
+	; \
+	\
+	find /usr/local -depth \
+		\( \
+			\( -type d -a \( -name test -o -name tests \) \) \
+			-o \
+			\( -type f -a \( -name '*.pyc' -o -name '*.pyo' \) \) \
+		\) -exec rm -rf '{}' +; \
+	rm -f get-pip.py \
+    && cd /usr/local/bin \
+    && if [ ! -f ./pip ]; then \
+        if [ -f ./pip2 ]; then \
+            ln -s pip2 pip; \
+        elif [ -f ./pip3 ]; then \
+            ln -s pip3 pip; \
+        fi \
+    fi \
+    && pip --version
+
+CMD ["python"]
+
+RUN apk add --update bash
