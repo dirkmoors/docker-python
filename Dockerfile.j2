@@ -1,12 +1,169 @@
 FROM python:{{ pythonversion }}-alpine
 
-ENV WAITFORIT_VERSION="v1.4.0" \
-    LC_ALL=C \
-    LIBRESSL_VERSION=2.6.3 \
-    GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
-    LIBCRYPTO_NAME="libcrypto.so.41.0.1"
+ENV LC_ALL=C
+
+# Install wkhtmltopdf
+ENV WKHTMLTOX_VERSION=0.12.4
+COPY contrib/wkhtmltopdf /tmp/wkhtmltopdf-conf
+RUN set -x \
+    && apk add --no-cache \
+      libstdc++ \
+      libx11 \
+      libxrender \
+      libxext \
+      ca-certificates \
+      fontconfig \
+      freetype \
+      ttf-dejavu \
+      ttf-droid \
+      ttf-freefont \
+      ttf-liberation \
+      ttf-ubuntu-font-family \
+    && apk add --no-cache --virtual .build-deps \
+      g++ \
+      git \
+      gtk+ \
+      gtk+-dev \
+      make \
+      mesa-dev \
+      openssl-dev \
+      patch \
+
+    # Download source files
+    && git clone --recursive https://github.com/wkhtmltopdf/wkhtmltopdf.git /tmp/wkhtmltopdf \
+    && cd /tmp/wkhtmltopdf \
+    && git checkout tags/$WKHTMLTOX_VERSION \
+
+    # Apply patches
+    && patch -i /tmp/wkhtmltopdf-conf/wkhtmltopdf-buildconfig.patch \
+    && cd /tmp/wkhtmltopdf/qt \
+    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-musl.patch \
+    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-musl-iconv-no-bom.patch \
+    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-recursive-global-mutex.patch \
+    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-font-pixel-size.patch \
+
+    # Modify qmake config
+    && sed -i "s|-O2|$CXXFLAGS|" mkspecs/common/g++.conf \
+    && sed -i "/^QMAKE_RPATH/s| -Wl,-rpath,||g" mkspecs/common/g++.conf \
+    && sed -i "/^QMAKE_LFLAGS\s/s|+=|+= $LDFLAGS|g" mkspecs/common/g++.conf \
+
+    # Prepare optimal build settings
+    && NB_CORES=$(grep -c '^processor' /proc/cpuinfo) \
+
+    # Install qt
+    && ./configure -confirm-license -opensource \
+      -prefix /usr \
+      -datadir /usr/share/qt \
+      -sysconfdir /etc \
+      -plugindir /usr/lib/qt/plugins \
+      -importdir /usr/lib/qt/imports \
+      -silent \
+      -release \
+      -static \
+      -webkit \
+      -script \
+      -svg \
+      -exceptions \
+      -xmlpatterns \
+      -openssl-linked \
+      -no-fast \
+      -no-largefile \
+      -no-accessibility \
+      -no-stl \
+      -no-sql-ibase \
+      -no-sql-mysql \
+      -no-sql-odbc \
+      -no-sql-psql \
+      -no-sql-sqlite \
+      -no-sql-sqlite2 \
+      -no-qt3support \
+      -no-opengl \
+      -no-openvg \
+      -no-system-proxies \
+      -no-multimedia \
+      -no-audio-backend \
+      -no-phonon \
+      -no-phonon-backend \
+      -no-javascript-jit \
+      -no-scripttools \
+      -no-declarative \
+      -no-declarative-debug \
+      -no-mmx \
+      -no-3dnow \
+      -no-sse \
+      -no-sse2 \
+      -no-sse3 \
+      -no-ssse3 \
+      -no-sse4.1 \
+      -no-sse4.2 \
+      -no-avx \
+      -no-neon \
+      -no-rpath \
+      -no-nis \
+      -no-cups \
+      -no-pch \
+      -no-dbus \
+      -no-separate-debug-info \
+      -no-gtkstyle \
+      -no-nas-sound \
+      -no-opengl \
+      -no-openvg \
+      -no-sm \
+      -no-xshape \
+      -no-xvideo \
+      -no-xsync \
+      -no-xinerama \
+      -no-xcursor \
+      -no-xfixes \
+      -no-xrandr \
+      -no-mitshm \
+      -no-xinput \
+      -no-xkb \
+      -no-glib \
+      -no-icu \
+      -nomake demos \
+      -nomake docs \
+      -nomake examples \
+      -nomake tools \
+      -nomake tests \
+      -nomake translations \
+      -graphicssystem raster \
+      -qt-zlib \
+      -qt-libpng \
+      -qt-libmng \
+      -qt-libtiff \
+      -qt-libjpeg \
+      -optimized-qmake \
+      -iconv \
+      -xrender \
+      -fontconfig \
+      -D ENABLE_VIDEO=0 \
+    && make --jobs $(($NB_CORES*2)) --silent \
+    && make install \
+
+    # Install wkhtmltopdf
+    && cd /tmp/wkhtmltopdf \
+    && qmake \
+    && make --jobs $(($NB_CORES*2)) --silent \
+    && make install \
+    && make clean \
+    && make distclean \
+
+    # Uninstall qt
+    && cd /tmp/wkhtmltopdf/qt \
+    && make uninstall \
+    && make clean \
+    && make distclean \
+
+    # Clean up when done
+    && rm -rf /tmp/* \
+    && rm -rf ${TMP_DIR}/compile \
+    && apk del --purge --force .build-deps
 
 # Install LibreSSL
+ENV LIBRESSL_VERSION=2.6.4 \
+    GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
+    LIBCRYPTO_NAME="libcrypto.so.42.0.0"
 RUN set -x \
     && echo "@commuedge https://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
     && echo "@commuedge https://dl-3.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
@@ -68,6 +225,7 @@ RUN set -v \
     && rm -rf /tmp/*
 
 # Install waitforit
+ENV WAITFORIT_VERSION="v1.4.0"
 RUN set -x \
     && BASE_PKGS='su-exec bash curl' \
     && apk add --update --no-cache make ${BASE_PKGS} \
