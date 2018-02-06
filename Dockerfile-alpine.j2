@@ -4,7 +4,7 @@ ENV LC_ALL=C
 
 # Install wkhtmltopdf
 ENV WKHTMLTOX_VERSION=0.12.4
-COPY contrib/wkhtmltopdf /tmp/wkhtmltopdf-conf
+COPY contrib/alpine/wkhtmltopdf /tmp/wkhtmltopdf-conf
 RUN set -x \
     && apk add --no-cache \
       libstdc++ \
@@ -138,13 +138,13 @@ RUN set -x \
       -xrender \
       -fontconfig \
       -D ENABLE_VIDEO=0 \
-    && make --jobs $(($NB_CORES*2)) --silent \
+    && make --jobs $(($NB_CORES*2)) \
     && make install \
 
     # Install wkhtmltopdf
     && cd /tmp/wkhtmltopdf \
     && qmake \
-    && make --jobs $(($NB_CORES*2)) --silent \
+    && make --jobs $(($NB_CORES*2)) \
     && make install \
     && make clean \
     && make distclean \
@@ -212,12 +212,13 @@ RUN set -x \
     && rm -rf /tmp/*
 
 # Install pillow dependencies
-COPY contrib/pillow /tmp/pillow
+COPY contrib/alpine/pillow /tmp/pillow
 RUN set -v \
     && BUILD_PKGS='git gcc g++ bash curl' \
     && PILLOW_DEPS='jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
     && apk add --no-cache ${PILLOW_DEPS} ${BUILD_PKGS} \
     && cd /tmp/pillow \
+        && ls -la \
         && ./install_imagequant.sh \
         && ./install_webp.sh \
         && cd - \
