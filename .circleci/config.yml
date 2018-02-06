@@ -1,7 +1,9 @@
 version: 2.0
 jobs:
   build_python27:
-    machine: true
+    docker:
+      - image: ditchitall/python:2.7.14-alpine
+      - image: ditchitall/python:2.7.14-jessie
     steps:
       - checkout
 
@@ -16,7 +18,9 @@ jobs:
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
           make deploy-python-2.7.14
   build_python35:
-    machine: true
+    docker:
+      - image: ditchitall/python:3.5.4-alpine
+      - image: ditchitall/python:3.5.4-jessie
     steps:
       - checkout
 
@@ -31,7 +35,9 @@ jobs:
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
           make deploy-python-3.5.4
   build_python36:
-    machine: true
+    docker:
+      - image: ditchitall/python:3.6.4-alpine
+      - image: ditchitall/python:3.6.4-jessie
     steps:
       - checkout
 
