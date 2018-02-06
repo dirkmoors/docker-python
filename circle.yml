@@ -25,7 +25,9 @@ jobs:
       - run: make build-python-2.7.14
   deploy-python27:
     steps:
-      - make deploy-python-2.7.14
+      - run: |
+          docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+          make deploy-python-2.7.14
   build-python35:
     docker:
       - image: ditchitall/python:3.5.4-alpine
@@ -51,7 +53,9 @@ jobs:
       - run: make build-python-3.5.4
   deploy-python35:
     steps:
-      - make deploy-python-3.5.4
+      - run: |
+          docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+          make deploy-python-3.5.4
   build-python36:
     docker:
       - image: ditchitall/python:3.6.4-alpine
@@ -77,7 +81,9 @@ jobs:
       - run: make build-python-3.6.4
   deploy-python36:
     steps:
-      - make deploy-python-3.6.4
+      - run: |
+          docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
+          make deploy-python-3.6.4
 
 workflows:
   version: 2
