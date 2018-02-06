@@ -11,7 +11,7 @@ build: build-python-2.7.14 build-python-3.5.4 build-python-3.6.4
 
 build-%: PYTHON_VERSION=$(parse_python_version)
 build-%:
-	@echo "Building for ALPINE"
+	@echo "Building for ALPINE: $(PYTHON_VERSION)"
 	@echo "\
 pythonversion: $(PYTHON_VERSION)\n\
 " > data$(PYTHON_VERSION).yml
@@ -22,7 +22,7 @@ pythonversion: $(PYTHON_VERSION)\n\
 	docker build -t $(DOCKER_REPO):$(PYTHON_VERSION)-alpine .
 	@rm data$(PYTHON_VERSION).yml
 	@rm Dockerfile
-	@echo "Building for Debian JESSIE"
+	@echo "Building for Debian JESSIE: $(PYTHON_VERSION)"
 	@echo "\
 pythonversion: $(PYTHON_VERSION)\n\
 " > data$(PYTHON_VERSION).yml
