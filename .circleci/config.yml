@@ -4,7 +4,7 @@ jobs:
     machine: true
     steps:
       - checkout
-  build-python27:
+  build_python27:
     docker:
       - image: ditchitall/python:2.7.14-alpine
       - image: ditchitall/python:2.7.14-jessie
@@ -22,7 +22,7 @@ jobs:
 
       # build and push Docker image
       - run: make build-python-2.7.14
-  deploy-python27:
+  deploy_python27:
     docker:
       - image: ditchitall/python:2.7.14-alpine
       - image: ditchitall/python:2.7.14-jessie
@@ -30,7 +30,7 @@ jobs:
       - run: |
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
           make deploy-python-2.7.14
-  build-python35:
+  build_python35:
     docker:
       - image: ditchitall/python:3.5.4-alpine
       - image: ditchitall/python:3.5.4-jessie
@@ -48,7 +48,7 @@ jobs:
 
       # build and push Docker image
       - run: make build-python-3.5.4
-  deploy-python35:
+  deploy_python35:
     docker:
       - image: ditchitall/python:3.5.4-alpine
       - image: ditchitall/python:3.5.4-jessie
@@ -56,7 +56,7 @@ jobs:
       - run: |
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
           make deploy-python-3.5.4
-  build-python36:
+  build_python36:
     docker:
       - image: ditchitall/python:3.6.4-alpine
       - image: ditchitall/python:3.6.4-jessie
@@ -74,7 +74,7 @@ jobs:
 
       # build and push Docker image
       - run: make build-python-3.6.4
-  deploy-python36:
+  deploy_python36:
     docker:
       - image: ditchitall/python:3.6.4-alpine
       - image: ditchitall/python:3.6.4-jessie
@@ -85,33 +85,33 @@ jobs:
 
 workflows:
   version: 2
-  build-deploy:
+  build-and-deploy:
     jobs:
       - build
-      - build-python27:
+      - build_python27:
           requires:
             - build
-      - build-python35:
+      - build_python35:
           requires:
             - build
-      - build-python36:
+      - build_python36:
           requires:
             - build
-      - deploy-python27:
+      - deploy_python27:
           requires:
-            - build-python27
+            - build_python27
           filters:
             branches:
               only: master
-      - deploy-python35:
+      - deploy_python35:
           requires:
-            - build-python35
+            - build_python35
           filters:
             branches:
               only: master
-      - deploy-python36:
+      - deploy_python36:
           requires:
-            - build-python36
+            - build_python36
           filters:
             branches:
               only: master
