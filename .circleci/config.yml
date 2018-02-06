@@ -1,12 +1,14 @@
 version: 2.0
 jobs:
+  build:
+    machine: true
+     steps:
+       - checkout
   build-python27:
     docker:
       - image: ditchitall/python:2.7.14-alpine
       - image: ditchitall/python:2.7.14-jessie
     steps:
-      - checkout
-
       - setup_remote_docker:
           docker_layer_caching:
 
@@ -36,8 +38,6 @@ jobs:
       - image: ditchitall/python:3.5.4-alpine
       - image: ditchitall/python:3.5.4-jessie
     steps:
-      - checkout
-
       - setup_remote_docker:
           docker_layer_caching:
 
@@ -67,8 +67,6 @@ jobs:
       - image: ditchitall/python:3.6.4-alpine
       - image: ditchitall/python:3.6.4-jessie
     steps:
-      - checkout
-
       - setup_remote_docker:
           docker_layer_caching:
 
@@ -98,24 +96,30 @@ workflows:
   version: 2
   build-deploy:
     jobs:
-      - build-python27
-      - build-python35
-      - build-python36
+      - build-python27:
+          requires:
+            - build
+      - build-python35:
+          requires:
+            - build
+      - build-python36:
+          requires:
+            - build
       - deploy-python27:
           requires:
-            -build-python27
+            - build-python27
           filters:
             branches:
               only: master
       - deploy-python35:
           requires:
-            -build-python35
+            - build-python35
           filters:
             branches:
               only: master
       - deploy-python36:
           requires:
-            -build-python36
+            - build-python36
           filters:
             branches:
               only: master
