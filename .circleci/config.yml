@@ -15,7 +15,7 @@ jobs:
           name: Install Docker client
           command: |
             set -x
-            apt-get update && apt-get install curl
+            apt-get update && apt-get install -y curl
             VER="17.05.0-ce"
             curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
@@ -49,7 +49,7 @@ jobs:
           name: Install Docker client
           command: |
             set -x
-            apt-get update && apt-get install curl
+            apt-get update && apt-get install -y curl
             VER="17.05.0-ce"
             curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
@@ -83,7 +83,7 @@ jobs:
           name: Install Docker client
           command: |
             set -x
-            apt-get update && apt-get install curl
+            apt-get update && apt-get install -y curl
             VER="17.05.0-ce"
             curl -L -o /tmp/docker-$VER.tgz https://download.docker.com/linux/static/stable/x86_64/docker-$VER.tgz
             tar -xz -C /tmp -f /tmp/docker-$VER.tgz
