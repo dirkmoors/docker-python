@@ -2,8 +2,7 @@ version: 2.0
 jobs:
   build_python27:
     docker:
-      - image: ditchitall/python:2.7.14-alpine
-      - image: ditchitall/python:2.7.14-jessie
+      - image: ubuntu:xenial
     steps:
       - checkout
 
@@ -22,7 +21,10 @@ jobs:
             mv /tmp/docker/* /usr/bin
 
       # build and push Docker image
-      - run: make build-python-2.7.14
+      - run: |
+          docker pull ditchitall/python:2.7.14-alpine
+          docker pull ditchitall/python:2.7.14-jessie
+          make build-python-2.7.14
   deploy_python27:
     docker:
       - image: ditchitall/python:2.7.14-alpine
@@ -33,8 +35,7 @@ jobs:
           make deploy-python-2.7.14
   build_python35:
     docker:
-      - image: ditchitall/python:3.5.4-alpine
-      - image: ditchitall/python:3.5.4-jessie
+      - image: ubuntu:xenial
     steps:
       - checkout
 
@@ -53,7 +54,10 @@ jobs:
             mv /tmp/docker/* /usr/bin
 
       # build and push Docker image
-      - run: make build-python-3.5.4
+      - run: |
+          docker pull ditchitall/python:3.5.4-alpine
+          docker pull ditchitall/python:3.5.4-jessie
+          make build-python-3.5.4
   deploy_python35:
     docker:
       - image: ditchitall/python:3.5.4-alpine
@@ -64,8 +68,7 @@ jobs:
           make deploy-python-3.5.4
   build_python36:
     docker:
-      - image: ditchitall/python:3.6.4-alpine
-      - image: ditchitall/python:3.6.4-jessie
+      - image: ubuntu:xenial
     steps:
       - checkout
 
@@ -84,7 +87,10 @@ jobs:
             mv /tmp/docker/* /usr/bin
 
       # build and push Docker image
-      - run: make build-python-3.6.4
+      - run: |
+          docker pull ditchitall/python:3.6.4-alpine
+          docker pull ditchitall/python:3.6.4-jessie
+          make build-python-3.6.4
   deploy_python36:
     docker:
       - image: ditchitall/python:3.6.4-alpine
