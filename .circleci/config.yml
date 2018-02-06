@@ -1,14 +1,12 @@
 version: 2.0
 jobs:
-  build:
-    machine: true
-    steps:
-      - checkout
   build_python27:
     docker:
       - image: ditchitall/python:2.7.14-alpine
       - image: ditchitall/python:2.7.14-jessie
     steps:
+      - checkout
+
       # build and push Docker image
       - run: make build-python-2.7.14
   deploy_python27:
@@ -24,6 +22,8 @@ jobs:
       - image: ditchitall/python:3.5.4-alpine
       - image: ditchitall/python:3.5.4-jessie
     steps:
+      - checkout
+
       # build and push Docker image
       - run: make build-python-3.5.4
   deploy_python35:
@@ -39,6 +39,8 @@ jobs:
       - image: ditchitall/python:3.6.4-alpine
       - image: ditchitall/python:3.6.4-jessie
     steps:
+      - checkout
+
       # build and push Docker image
       - run: make build-python-3.6.4
   deploy_python36:
@@ -54,16 +56,9 @@ workflows:
   version: 2
   build-and-deploy:
     jobs:
-      - build
-      - build_python27:
-          requires:
-            - build
-      - build_python35:
-          requires:
-            - build
-      - build_python36:
-          requires:
-            - build
+      - build_python27
+      - build_python35
+      - build_python36
       - deploy_python27:
           requires:
             - build_python27
