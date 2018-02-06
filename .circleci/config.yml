@@ -24,6 +24,9 @@ jobs:
       # build and push Docker image
       - run: make build-python-2.7.14
   deploy-python27:
+    docker:
+      - image: ditchitall/python:2.7.14-alpine
+      - image: ditchitall/python:2.7.14-jessie
     steps:
       - run: |
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
@@ -52,6 +55,9 @@ jobs:
       # build and push Docker image
       - run: make build-python-3.5.4
   deploy-python35:
+    docker:
+      - image: ditchitall/python:3.5.4-alpine
+      - image: ditchitall/python:3.5.4-jessie
     steps:
       - run: |
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
@@ -80,6 +86,9 @@ jobs:
       # build and push Docker image
       - run: make build-python-3.6.4
   deploy-python36:
+    docker:
+      - image: ditchitall/python:3.6.4-alpine
+      - image: ditchitall/python:3.6.4-jessie
     steps:
       - run: |
           docker login -e ${DOCKER_EMAIL} -u ${DOCKER_USER} -p ${DOCKER_PASS}
