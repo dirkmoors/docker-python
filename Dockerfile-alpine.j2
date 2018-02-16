@@ -160,62 +160,18 @@ RUN set -x \
     && rm -rf ${TMP_DIR}/compile \
     && apk del --purge --force .build-deps
 
-# Install LibreSSL
-ENV LIBRESSL_VERSION=2.6.4 \
-    GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
-    LIBCRYPTO_NAME="libcrypto.so.42.0.0"
-RUN set -x \
-    && echo "@commuedge https://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && echo "@commuedge https://dl-3.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
-    && NB_CORES=${BUILD_CORES-$(getconf _NPROCESSORS_CONF)} \
-    && BUILD_DEPS=" \
-        build-base \
-        linux-headers \
-        ca-certificates \
-        automake \
-        autoconf \
-        git \
-        tar \
-        libtool \
-        pcre-dev \
-        zlib-dev \
-        binutils \
-        gnupg" \
-    && apk -U add \
-        ${BUILD_DEPS} \
-        pcre \
-        zlib \
-        libgcc \
-        libstdc++ \
-        su-exec \
-        openssl \
-        bind-tools \
-        tini@commuedge \
-    && cd /tmp \
-    && LIBRESSL_TARBALL="libressl-${LIBRESSL_VERSION}.tar.gz" \
-    && wget -q http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${LIBRESSL_TARBALL} \
-    && echo "Verifying ${LIBRESSL_TARBALL} using GPG..." \
-    && wget -q http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${LIBRESSL_TARBALL}.asc \
-    && wget -q http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl.asc \
-    && gpg --import libressl.asc \
-    && FINGERPRINT="$(LANG=C gpg --verify ${LIBRESSL_TARBALL}.asc ${LIBRESSL_TARBALL} 2>&1 \
-     | sed -n "s#Primary key fingerprint: \(.*\)#\1#p")" \
-    && if [ -z "${FINGERPRINT}" ]; then echo "Warning! Invalid GPG signature!" && exit 1; fi \
-    && if [ "${FINGERPRINT}" != "${GPG_LIBRESSL}" ]; then echo "Warning! Wrong GPG fingerprint!" && exit 1; fi \
-    && echo "All seems good, now unpacking ${LIBRESSL_TARBALL}..." \
-    && tar xzf ${LIBRESSL_TARBALL} \
-    && cd /tmp/libressl-${LIBRESSL_VERSION} \
-    && ./configure \
-    && make check \
-    && make install \
-    && apk del --purge ${BUILD_DEPS} \
-    && rm -rf /tmp/*
+# Install libressl
+ENV LIBRESSL_VERSION=2.6.4-r0
+RUN set -v \
+    && echo "@edge https://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
+    && apk -u add --no-cache apk-tools@edge \
+    && apk -U add --no-cache libressl@edge=${LIBRESSL_VERSION}
 
 # Install pillow dependencies
 COPY contrib/alpine/pillow /tmp/pillow
 RUN set -v \
     && BUILD_PKGS='git gcc g++ bash curl' \
-    && PILLOW_DEPS='jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
+    && PILLOW_DEPS='giflib-dev jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
     && apk add --no-cache ${PILLOW_DEPS} ${BUILD_PKGS} \
     && cd /tmp/pillow \
         && ls -la \

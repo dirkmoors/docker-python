@@ -68,7 +68,8 @@ RUN set -x \
         liblcms2-2 \
         libwebp-dev \
         libpng-dev \
-        libopenjpeg-dev" \
+        libopenjpeg-dev \
+        libgif-dev" \
     && apt-get update \
     && apt-get install -y ${BUILD_DEPS} ${RUNTIME_DEPS} \
     && cd /tmp \
