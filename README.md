@@ -30,6 +30,8 @@ bash-4.3$ 0
 Extras integrated into the build are:
 ```
 wkhtml2pdf (v0.12.4)
-libressl (v2.6.4)
 dependencies for Pillow, supporting JPEG, PNG, TIFF and WebP
 ```
+
+## More
+https://github.com/dirkmoors/docker-alpine-recipes

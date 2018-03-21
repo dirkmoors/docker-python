@@ -18,41 +18,6 @@ RUN set -x \
     && chmod 755 /usr/bin/wkhtmltopdf \
     && rm -rf /tmp/*
 
-# Install LibreSSL
-ENV LIBRESSL_VERSION=2.6.4 \
-    GPG_LIBRESSL="A1EB 079B 8D3E B92B 4EBD  3139 663A F51B D5E4 D8D5" \
-    LIBCRYPTO_NAME="libcrypto.so.42.0.0"
-RUN set -x \
-    && BUILD_DEPS=" \
-        gcc \
-        automake \
-        autoconf \
-        git \
-        libtool \
-        perl" \
-    && apt-get update \
-    && apt-get install -y ${BUILD_DEPS} \
-    && cd /tmp \
-    && LIBRESSL_TARBALL="libressl-${LIBRESSL_VERSION}.tar.gz" \
-    && wget -q http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${LIBRESSL_TARBALL} \
-    && echo "Verifying ${LIBRESSL_TARBALL} using GPG..." \
-    && wget -q http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/${LIBRESSL_TARBALL}.asc \
-    && wget -q http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl.asc \
-    && gpg --import libressl.asc \
-    && FINGERPRINT="$(LANG=C gpg --verify ${LIBRESSL_TARBALL}.asc ${LIBRESSL_TARBALL} 2>&1 \
-     | sed -n "s#Primary key fingerprint: \(.*\)#\1#p")" \
-    && if [ -z "${FINGERPRINT}" ]; then echo "Warning! Invalid GPG signature!" && exit 1; fi \
-    && if [ "${FINGERPRINT}" != "${GPG_LIBRESSL}" ]; then echo "Warning! Wrong GPG fingerprint!" && exit 1; fi \
-    && echo "All seems good, now unpacking ${LIBRESSL_TARBALL}..." \
-    && tar xzf ${LIBRESSL_TARBALL} \
-    && cd /tmp/libressl-${LIBRESSL_VERSION} \
-    && ./configure \
-    && make check \
-    && make install \
-    && apt-get purge -y --auto-remove ${BUILD_DEPS} \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /tmp/*
-
 # Install pillow dependencies
 RUN set -x \
     && BUILD_DEPS=" \

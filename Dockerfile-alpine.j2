@@ -2,6 +2,21 @@ FROM python:{{ pythonversion }}-alpine
 
 ENV LC_ALL=C
 
+# Add repositories
+RUN set -v \
+    && echo "@edge https://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
+    && echo "@commuedge https://nl.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories \
+    && apk -u add --no-cache apk-tools@edge
+
+# Install ca-certificates
+RUN set -v \
+    && apk add --update ca-certificates \
+    && update-ca-certificates
+
+# Install base packages
+RUN set -v \
+    && apk add --update linux-headers make@edge curl@edge wget@edge tar@edge
+
 # Install wkhtmltopdf
 ENV WKHTMLTOX_VERSION=0.12.4
 COPY contrib/alpine/wkhtmltopdf /tmp/wkhtmltopdf-conf
@@ -159,13 +174,6 @@ RUN set -x \
     && rm -rf /tmp/* \
     && rm -rf ${TMP_DIR}/compile \
     && apk del --purge --force .build-deps
-
-# Install libressl
-ENV LIBRESSL_VERSION=2.6.4-r0
-RUN set -v \
-    && echo "@edge https://nl.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories \
-    && apk -u add --no-cache apk-tools@edge \
-    && apk -U add --no-cache libressl@edge=${LIBRESSL_VERSION}
 
 # Install pillow dependencies
 COPY contrib/alpine/pillow /tmp/pillow
