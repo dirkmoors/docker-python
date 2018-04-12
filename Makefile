@@ -5,9 +5,9 @@ parse_python_version = $(shell echo $@ | sed "s/[^-]*-python-\(.*\)/\1/")
 
 all: build push
 
-push: push-python-2.7.14 push-python-3.5.4 push-python-3.6.4
+push: push-python-2.7.14 push-python-3.5.5 push-python-3.6.4
 
-build: build-python-2.7.14 build-python-3.5.4 build-python-3.6.4
+build: build-python-2.7.14 build-python-3.5.5 build-python-3.6.4
 
 build-%: PYTHON_VERSION=$(parse_python_version)
 build-%:
@@ -33,8 +33,21 @@ pythonversion: $(PYTHON_VERSION)\n\
 	docker build -t $(DOCKER_REPO):$(PYTHON_VERSION)-jessie .
 	@rm data$(PYTHON_VERSION).yml
 	@rm Dockerfile
+	@echo "Building crossbuild armv7hf: $(PYTHON_VERSION)"
+	@echo "\
+pythonversion: $(PYTHON_VERSION)\n\
+" > data$(PYTHON_VERSION).yml
+	@docker run \
+		-v $(ROOTDIR)/Dockerfile-armv7hf.j2:/data/Dockerfile-armv7hf.j2 \
+		-v $(ROOTDIR)/data$(PYTHON_VERSION).yml:/data/data.yml \
+		sgillis/jinja2cli Dockerfile-armv7hf.j2 data.yml > Dockerfile
+	docker build -t $(DOCKER_REPO):$(PYTHON_VERSION)-armv7hf .
+	@rm data$(PYTHON_VERSION).yml
+	@rm Dockerfile
+
 
 push-%: PYTHON_VERSION=$(parse_python_version)
 push-%:
 	docker push $(DOCKER_REPO):$(PYTHON_VERSION)-alpine
 	docker push $(DOCKER_REPO):$(PYTHON_VERSION)-jessie
+	docker push $(DOCKER_REPO):$(PYTHON_VERSION)-armv7hf

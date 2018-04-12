@@ -1,0 +1,70 @@
+FROM resin/armv7hf-python:{{ pythonversion }}-slim
+
+ENV LC_ALL=C
+
+RUN [ "cross-build-start" ]
+
+# Install global packages
+RUN set -x \
+    && apt-get update \
+    && apt-get install make wget xz-utils xvfb libxrender1 libfontconfig1 libssl-dev -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install wkhtmltopdf
+ENV WKHTMLTOX_VERSION=0.12.4
+RUN set -x \
+    && cd /tmp \
+    && wget -q https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/${WKHTMLTOX_VERSION}/wkhtmltox-${WKHTMLTOX_VERSION}_linux-generic-amd64.tar.xz \
+    && tar xf wkhtmltox-${WKHTMLTOX_VERSION}_linux-generic-amd64.tar.xz \
+    && cp wkhtmltox/bin/wkhtmltopdf /usr/bin/wkhtmltopdf \
+    && chmod 755 /usr/bin/wkhtmltopdf \
+    && rm -rf /tmp/*
+
+# Install pillow dependencies
+RUN set -x \
+    && BUILD_DEPS=" \
+        gcc \
+        git" \
+    && RUNTIME_DEPS=" \
+        tcl-dev \
+        tk-dev \
+        libjpeg-dev \
+        zlib1g-dev \
+        libtiff-dev \
+        libfreetype6-dev \
+        liblcms2-2 \
+        libwebp-dev \
+        libpng-dev \
+        libopenjpeg-dev \
+        libgif-dev" \
+    && apt-get update \
+    && apt-get install -y ${BUILD_DEPS} ${RUNTIME_DEPS} \
+#    && cd /tmp \
+#    && git clone --recursive https://github.com/kornelski/pngquant.git \
+#    && cd pngquant \
+#    && ./configure \
+#    && make \
+#    && make install \
+    && apt-get purge -y --auto-remove ${BUILD_DEPS} \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /tmp/*
+
+# Install waitforit
+ENV WAITFORIT_VERSION="v1.4.0"
+RUN set -x \
+    && BUILD_DEPS=" \
+        curl" \
+    && apt-get update \
+    && apt-get install -y ${BUILD_DEPS} \
+    && curl -fsSLR -o /usr/local/bin/su-exec https://github.com/javabean/su-exec/releases/download/v0.2/su-exec.$(dpkg --print-architecture | awk -F- '{ print $NF }') \
+    && chmod 755 /usr/local/bin/su-exec \
+    && curl -o /usr/local/bin/waitforit -sSL https://github.com/maxcnunes/waitforit/releases/download/$WAITFORIT_VERSION/waitforit-linux_amd64 \
+    && chmod +x /usr/local/bin/waitforit \
+    && apt-get purge -y --auto-remove ${BUILD_DEPS} \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN [ "cross-build-end" ]
+
+# COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
+
+# ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

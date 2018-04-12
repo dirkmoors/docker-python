@@ -178,7 +178,7 @@ RUN set -x \
 # Install pillow dependencies
 COPY contrib/alpine/pillow /tmp/pillow
 RUN set -v \
-    && BUILD_PKGS='git gcc g++ bash curl' \
+    && BUILD_PKGS='git gcc g++ bash' \
     && PILLOW_DEPS='giflib-dev jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
     && apk add --no-cache ${PILLOW_DEPS} ${BUILD_PKGS} \
     && cd /tmp/pillow \
@@ -192,7 +192,7 @@ RUN set -v \
 # Install waitforit
 ENV WAITFORIT_VERSION="v1.4.0"
 RUN set -x \
-    && BASE_PKGS='su-exec bash curl' \
+    && BASE_PKGS='su-exec bash' \
     && apk add --update --no-cache make ${BASE_PKGS} \
     && curl -o /usr/local/bin/waitforit -sSL https://github.com/maxcnunes/waitforit/releases/download/$WAITFORIT_VERSION/waitforit-linux_amd64 \
     && chmod +x /usr/local/bin/waitforit \
