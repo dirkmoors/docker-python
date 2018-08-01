@@ -1,6 +1,10 @@
 FROM python:{{ pythonversion }}-alpine
 
-ENV LC_ALL=C
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8 \
+    LC_CTYPE="en_US.UTF-8" \
+    LC_ALL=en_US.UTF-8 \
+    PYTHONUNBUFFERED=1
 
 # Add repositories
 RUN set -v \
@@ -9,195 +13,47 @@ RUN set -v \
     && apk -u add --no-cache apk-tools@edge
 
 # Install ca-certificates
-RUN set -v \
-    && apk add --update ca-certificates \
-    && update-ca-certificates
+RUN set -ex \
+    && apk add --update make ca-certificates curl linux-headers \
+    && update-ca-certificates \
+    && rm -rf /var/cache/apk/*
 
-# Install base packages
-RUN set -v \
-    && apk add --update linux-headers make@edge curl@edge wget@edge tar@edge
-
-# Install wkhtmltopdf
-ENV WKHTMLTOX_VERSION=0.12.4
-COPY contrib/alpine/wkhtmltopdf /tmp/wkhtmltopdf-conf
-RUN set -x \
-    && apk add --no-cache \
-      libstdc++ \
-      libx11 \
-      libxrender \
-      libxext \
-      ca-certificates \
-      fontconfig \
-      freetype \
-      ttf-dejavu \
-      ttf-droid \
-      ttf-freefont \
-      ttf-liberation \
-      ttf-ubuntu-font-family \
-    && apk add --no-cache --virtual .build-deps \
-      g++ \
-      git \
-      gtk+ \
-      gtk+-dev \
-      make \
-      mesa-dev \
-      openssl-dev \
-      patch \
-
-    # Download source files
-    && git clone --recursive https://github.com/wkhtmltopdf/wkhtmltopdf.git /tmp/wkhtmltopdf \
-    && cd /tmp/wkhtmltopdf \
-    && git checkout tags/$WKHTMLTOX_VERSION \
-
-    # Apply patches
-    && patch -i /tmp/wkhtmltopdf-conf/wkhtmltopdf-buildconfig.patch \
-    && cd /tmp/wkhtmltopdf/qt \
-    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-musl.patch \
-    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-musl-iconv-no-bom.patch \
-    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-recursive-global-mutex.patch \
-    && patch -p1 -i /tmp/wkhtmltopdf-conf/qt-font-pixel-size.patch \
-
-    # Modify qmake config
-    && sed -i "s|-O2|$CXXFLAGS|" mkspecs/common/g++.conf \
-    && sed -i "/^QMAKE_RPATH/s| -Wl,-rpath,||g" mkspecs/common/g++.conf \
-    && sed -i "/^QMAKE_LFLAGS\s/s|+=|+= $LDFLAGS|g" mkspecs/common/g++.conf \
-
-    # Prepare optimal build settings
-    && NB_CORES=$(grep -c '^processor' /proc/cpuinfo) \
-
-    # Install qt
-    && ./configure -confirm-license -opensource \
-      -prefix /usr \
-      -datadir /usr/share/qt \
-      -sysconfdir /etc \
-      -plugindir /usr/lib/qt/plugins \
-      -importdir /usr/lib/qt/imports \
-      -silent \
-      -release \
-      -static \
-      -webkit \
-      -script \
-      -svg \
-      -exceptions \
-      -xmlpatterns \
-      -openssl-linked \
-      -no-fast \
-      -no-largefile \
-      -no-accessibility \
-      -no-stl \
-      -no-sql-ibase \
-      -no-sql-mysql \
-      -no-sql-odbc \
-      -no-sql-psql \
-      -no-sql-sqlite \
-      -no-sql-sqlite2 \
-      -no-qt3support \
-      -no-opengl \
-      -no-openvg \
-      -no-system-proxies \
-      -no-multimedia \
-      -no-audio-backend \
-      -no-phonon \
-      -no-phonon-backend \
-      -no-javascript-jit \
-      -no-scripttools \
-      -no-declarative \
-      -no-declarative-debug \
-      -no-mmx \
-      -no-3dnow \
-      -no-sse \
-      -no-sse2 \
-      -no-sse3 \
-      -no-ssse3 \
-      -no-sse4.1 \
-      -no-sse4.2 \
-      -no-avx \
-      -no-neon \
-      -no-rpath \
-      -no-nis \
-      -no-cups \
-      -no-pch \
-      -no-dbus \
-      -no-separate-debug-info \
-      -no-gtkstyle \
-      -no-nas-sound \
-      -no-opengl \
-      -no-openvg \
-      -no-sm \
-      -no-xshape \
-      -no-xvideo \
-      -no-xsync \
-      -no-xinerama \
-      -no-xcursor \
-      -no-xfixes \
-      -no-xrandr \
-      -no-mitshm \
-      -no-xinput \
-      -no-xkb \
-      -no-glib \
-      -no-icu \
-      -nomake demos \
-      -nomake docs \
-      -nomake examples \
-      -nomake tools \
-      -nomake tests \
-      -nomake translations \
-      -graphicssystem raster \
-      -qt-zlib \
-      -qt-libpng \
-      -qt-libmng \
-      -qt-libtiff \
-      -qt-libjpeg \
-      -optimized-qmake \
-      -iconv \
-      -xrender \
-      -fontconfig \
-      -D ENABLE_VIDEO=0 \
-    && make --jobs $(($NB_CORES*2)) \
-    && make install \
-
-    # Install wkhtmltopdf
-    && cd /tmp/wkhtmltopdf \
-    && qmake \
-    && make --jobs $(($NB_CORES*2)) \
-    && make install \
-    && make clean \
-    && make distclean \
-
-    # Uninstall qt
-    && cd /tmp/wkhtmltopdf/qt \
-    && make uninstall \
-    && make clean \
-    && make distclean \
-
-    # Clean up when done
-    && rm -rf /tmp/* \
-    && rm -rf ${TMP_DIR}/compile \
-    && apk del --purge --force .build-deps
-
-# Install pillow dependencies
-COPY contrib/alpine/pillow /tmp/pillow
-RUN set -v \
-    && BUILD_PKGS='git gcc g++ bash curl' \
-    && PILLOW_DEPS='giflib-dev jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
-    && apk add --no-cache ${PILLOW_DEPS} ${BUILD_PKGS} \
-    && cd /tmp/pillow \
-        && ls -la \
-        && ./install_imagequant.sh \
-        && ./install_webp.sh \
-        && cd - \
-    && apk del --purge ${BUILD_PKGS} \
-    && rm -rf /tmp/*
+# Install common packages
+RUN set -ex \
+    && PKGS='bash zlib su-exec linux-headers make@edge curl@edge wget@edge tar@edge' \
+    && apk add --update ${PKGS} \
+    && rm -rf /var/cache/apk/*
 
 # Install waitforit
-ENV WAITFORIT_VERSION="v1.4.0"
-RUN set -x \
-    && BASE_PKGS='su-exec bash curl' \
-    && apk add --update --no-cache make ${BASE_PKGS} \
+ENV WAITFORIT_VERSION="v2.2.0"
+RUN set -ex \
     && curl -o /usr/local/bin/waitforit -sSL https://github.com/maxcnunes/waitforit/releases/download/$WAITFORIT_VERSION/waitforit-linux_amd64 \
     && chmod +x /usr/local/bin/waitforit \
-    && apk del --purge curl \
     && rm -rf /var/cache/apk/*
+
+# Install wkhtmltopdf
+COPY contrib/alpine/wkhtmltopdf/wkhtmltopdf /bin/wkhtmltopdf
+RUN apk add --update --no-cache \
+    libgcc libstdc++ libx11 glib libxrender libxext libintl \
+    libcrypto1.0 libssl1.0 \
+    ttf-dejavu ttf-droid ttf-freefont ttf-liberation ttf-ubuntu-font-family \
+    && rm -rf /var/cache/apk/*
+
+# Install Pillow Dependencies (currently, these are the only versions available. Keep them here for explicit version pinning.)
+ENV IMAGEQUANT_VERSION=2.8.2 \
+    WEBP_VERSION=0.6.0
+RUN set -ex \
+    && BUILD_PKGS='git gcc g++' \
+    && PILLOW_DEPS='zlib jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
+    && apk add --update ${PILLOW_DEPS} ${BUILD_PKGS} \
+    && wget -q https://raw.githubusercontent.com/dirkmoors/docker-alpine-recipes/master/libimagequant/install-libimagequant.sh \
+    && sh install-libimagequant.sh \
+    && wget -q https://raw.githubusercontent.com/dirkmoors/docker-alpine-recipes/master/libwebp/install-libwebp.sh \
+    && sh install-libwebp.sh \
+    && apk del --purge ${BUILD_PKGS} \
+    && find / -name \*.pyc -delete \
+    && rm -rf /var/cache/apk/*
+
 
 COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
 
