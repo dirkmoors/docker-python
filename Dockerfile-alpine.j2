@@ -1,4 +1,4 @@
-FROM python:{{ pythonversion }}-alpine
+FROM python:{{ pythonversion }}-alpine3.10
 
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US.UTF-8 \
@@ -35,7 +35,7 @@ RUN set -ex \
 COPY contrib/alpine/wkhtmltopdf/wkhtmltopdf /bin/wkhtmltopdf
 RUN apk add --update --no-cache \
     libgcc libstdc++ libx11 glib libxrender libxext libintl \
-    libcrypto1.0 libssl1.0 \
+    libcrypto1.1 libssl1.1 \
     ttf-dejavu ttf-droid ttf-freefont ttf-liberation ttf-ubuntu-font-family \
     && rm -rf /var/cache/apk/*
 
@@ -43,8 +43,8 @@ RUN apk add --update --no-cache \
 ENV IMAGEQUANT_VERSION=2.8.2 \
     WEBP_VERSION=0.6.0
 RUN set -ex \
-    && BUILD_PKGS='git gcc g++' \
-    && PILLOW_DEPS='zlib jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tk-dev tcl-dev' \
+    && BUILD_PKGS='gcc g++' \
+    && PILLOW_DEPS='zlib jpeg-dev zlib-dev tiff-dev lcms2-dev freetype-dev openjpeg-dev tcl-dev' \
     && apk add --update ${PILLOW_DEPS} ${BUILD_PKGS} \
     && wget -q https://raw.githubusercontent.com/dirkmoors/docker-alpine-recipes/master/libimagequant/install-libimagequant.sh \
     && sh install-libimagequant.sh \

@@ -1,4 +1,4 @@
-FROM python:{{ pythonversion }}-slim-jessie
+FROM python:{{ pythonversion }}-slim-stretch
 
 ENV LC_ALL=C
 
@@ -6,6 +6,20 @@ ENV LC_ALL=C
 RUN set -x \
     && apt-get update \
     && apt-get install make wget xz-utils xvfb libxrender1 libfontconfig1 libssl-dev -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install waitforit
+ENV WAITFORIT_VERSION="v2.2.0"
+RUN set -x \
+    && BUILD_DEPS=" \
+        curl" \
+    && apt-get update \
+    && apt-get install -y ${BUILD_DEPS} \
+    && curl -fsSLR -o /usr/local/bin/su-exec https://github.com/javabean/su-exec/releases/download/v0.2/su-exec.$(dpkg --print-architecture | awk -F- '{ print $NF }') \
+    && chmod 755 /usr/local/bin/su-exec \
+    && curl -o /usr/local/bin/waitforit -sSL https://github.com/maxcnunes/waitforit/releases/download/$WAITFORIT_VERSION/waitforit-linux_amd64 \
+    && chmod +x /usr/local/bin/waitforit \
+    && apt-get purge -y --auto-remove ${BUILD_DEPS} \
     && rm -rf /var/lib/apt/lists/*
 
 # Install wkhtmltopdf
@@ -33,7 +47,7 @@ RUN set -x \
         liblcms2-2 \
         libwebp-dev \
         libpng-dev \
-        libopenjpeg-dev \
+        libjpeg-dev \
         libgif-dev" \
     && apt-get update \
     && apt-get install -y ${BUILD_DEPS} ${RUNTIME_DEPS} \
@@ -46,22 +60,6 @@ RUN set -x \
     && apt-get purge -y --auto-remove ${BUILD_DEPS} \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/*
-
-# Install waitforit
-ENV WAITFORIT_VERSION="v2.2.0"
-RUN set -x \
-    && BUILD_DEPS=" \
-        curl" \
-    && apt-get update \
-    && apt-get install -y ${BUILD_DEPS} \
-    && curl -fsSLR -o /usr/local/bin/su-exec https://github.com/javabean/su-exec/releases/download/v0.2/su-exec.$(dpkg --print-architecture | awk -F- '{ print $NF }') \
-    && chmod 755 /usr/local/bin/su-exec \
-    && curl -o /usr/local/bin/waitforit -sSL https://github.com/maxcnunes/waitforit/releases/download/$WAITFORIT_VERSION/waitforit-linux_amd64 \
-    && chmod +x /usr/local/bin/waitforit \
-    && apt-get purge -y --auto-remove ${BUILD_DEPS} \
-    && rm -rf /var/lib/apt/lists/*
-
-
 
 # COPY docker-entrypoint.sh /usr/local/bin/entrypoint.sh
 
